@@ -23,6 +23,7 @@ export let options = {
     // the rate of successful checks should be higher than 90%
     checks: ['rate>0.90'],
   },
+  setupTimeout: '300s',
   noConnectionReuse: true,
   scenarios: {
     rust: {
