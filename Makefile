@@ -31,10 +31,13 @@ run-hello-world-test:
 
 run-tests: run-hello-world-test run-density-tests
 
-cleanup: cleanup-apps cleanup-tests
+cleanup: cleanup-apps cleanup-tests cleanup-configmaps
 
 cleanup-apps:
 	source utils.sh && delete_k8s_resources spinapps
 
 cleanup-tests:
 	source utils.sh && delete_k8s_resources testruns
+
+cleanup-configmaps:
+	kubectl delete configmap -l k6-test=true

@@ -68,7 +68,7 @@ docker run --rm \
 
 # Create the script ConfigMap
 kubectl get configmap $name >/dev/null 2>&1 || \
-    kubectl create configmap $name --from-file=archive.tar
+    (kubectl create configmap $name --from-file=archive.tar && kubectl label configmap $name k6-test=true)
 
 # Create temporary test run resource to customize per test app
 tempfile="$(mktemp -d)/test-run-$name.yaml"
@@ -101,7 +101,6 @@ then
 elif [ "$OUTPUT" == "datadog" ];
 then
     echo "Running with Datadog output"
-    # TODO: use datadog k8s svc from installed Helm release
     export statsd_addr=datadog.datadog.svc.cluster.local:8125
 
     yq -i '(.spec.runner.env += {"name": "K6_OUT","value": "output-statsd"}) |
