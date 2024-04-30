@@ -57,7 +57,7 @@ export tag=$SPIN_V_VERSION
 export executor=${EXECUTOR:-"containerd-shim-spin"}
 export runner_image=$REGISTRY_URL/k6:latest
 export test_id=$TEST_ID
-export name=$TEST
+export name=${NAME:-$TEST}
 echo "Running test $name"
 
 # Create a tar archive of the test script and helper functions via the k6 runner image

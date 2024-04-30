@@ -13,15 +13,12 @@ const namespace = `${__ENV.NAMESPACE}` != "undefined" ? `${__ENV.NAMESPACE}` : "
 const executor = `${__ENV.EXECUTOR}` != "undefined" ? `${__ENV.EXECUTOR}` : "containerd-shim-spin";
 const repo = `${__ENV.REPO}` != "undefined" ? `${__ENV.REPO}` : "rg.fr-par.scw.cloud/dlancshire-public/template-app-";
 const tag = `${__ENV.TAG}` != "undefined" ? `${__ENV.TAG}` : "latest";
-const timeToDeployTenApps = new Gauge('time_to_deploy_ten_apps');
-const deployedApps = new Gauge('deployed_apps');
 const maxScenarioDurationSecs = `${__ENV.MAX_SCENARIO_DURATION_SECS}` != "undefined" ? `${__ENV.MAX_SCENARIO_DURATION_SECS}` : 180;
 const restIntervalSecs = `${__ENV.REST_INTERVAL_SECONDS}` != "undefined" ? `${__ENV.REST_INTERVAL_SECONDS}` : 10;
+const batchSize = `${__ENV.BATCH_SIZE}` != "undefined" ? `${__ENV.BATCH_SIZE}` : 10;
 
-// Should match the number of apps deployed by the last stage
-// and be divisible by the batch size
-// TODO: make this configurable
-const totalApps = 50;
+const timeToDeployTenApps = new Gauge(`time_to_deploy_${batchSize}_apps`);
+const deployedApps = new Gauge('number_of_apps');
 
 export let options = {
   tags: {
@@ -31,94 +28,10 @@ export let options = {
     // the rate of successful checks should be higher than 90%
     checks: ['rate>0.90'],
   },
-  noConnectionReuse: true,
-  setupTimeout: '120s',
-  scenarios: {
-    deploy1: {
-      executor: 'per-vu-iterations',
-      exec: 'deployApps',
-      iterations: 1,
-      vus: 1,
-      maxDuration: `${maxScenarioDurationSecs}s`,
-      env: { BATCH_NUMBER: '0', BATCH_SIZE: '10' },
-    },
-    test1: {
-      executor: 'constant-vus',
-      vus: 20,
-      exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 1 + restIntervalSecs}s`,
-      env: { BATCH_NUMBER: '0', BATCH_SIZE: '10' },
-      duration: '10s',
-    },
-    deploy2: {
-      executor: 'per-vu-iterations',
-      exec: 'deployApps',
-      iterations: 1,
-      vus: 1,
-      maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 1 + restIntervalSecs * 2}s`,
-      env: { BATCH_NUMBER: '1', BATCH_SIZE: '10' },
-    },
-    test2: {
-      executor: 'constant-vus',
-      vus: 20,
-      exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 2 + restIntervalSecs * 2}s`,
-      env: { BATCH_NUMBER: '1', BATCH_SIZE: '10' },
-      duration: '10s',
-    },
-    deploy3: {
-      executor: 'per-vu-iterations',
-      exec: 'deployApps',
-      iterations: 1,
-      vus: 1,
-      maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 2 + restIntervalSecs * 3}s`,
-      env: { BATCH_NUMBER: '2', BATCH_SIZE: '10' },
-    },
-    test3: {
-      executor: 'constant-vus',
-      vus: 20,
-      exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 3 + restIntervalSecs * 3}s`,
-      env: { BATCH_NUMBER: '2', BATCH_SIZE: '10' },
-      duration: '10s',
-    },
-    deploy4: {
-      executor: 'per-vu-iterations',
-      exec: 'deployApps',
-      iterations: 1,
-      vus: 1,
-      maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 3 + restIntervalSecs * 4}s`,
-      env: { BATCH_NUMBER: '3', BATCH_SIZE: '10' },
-    },
-    test4: {
-      executor: 'constant-vus',
-      vus: 20,
-      exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 4 + restIntervalSecs * 4}s`,
-      env: { BATCH_NUMBER: '3', BATCH_SIZE: '10' },
-      duration: '10s',
-    },
-    deploy5: {
-      executor: 'per-vu-iterations',
-      exec: 'deployApps',
-      iterations: 1,
-      vus: 1,
-      maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 4 + restIntervalSecs * 5}s`,
-      env: { BATCH_NUMBER: '4', BATCH_SIZE: '10' },
-    },
-    test5: {
-      executor: 'constant-vus',
-      vus: 20,
-      exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 5 + restIntervalSecs * 5}s`,
-      env: { BATCH_NUMBER: '4', BATCH_SIZE: '10' },
-      duration: '10s',
-    },
-  },
+  vus: 50,
+  duration: '30s',
+  setupTimeout: '300s',
+  noConnectionReuse: true
 };
 
 class TestEndpoint {
@@ -128,15 +41,14 @@ class TestEndpoint {
   }
 }
 
-function createSpinApps(imagePrefix, batchNumber, batchSize) {
-  console.log(`Creating ${batchSize} SpinApp custom resources`)
+function createSpinApps(imagePrefix, numDeployed, batchSize) {
+  console.log(`Creating ${batchSize} SpinApp custom resources also deployed ${numDeployed} apps`)
   let apps = [];
-  for (let i = 0; i < batchSize; i++) {
-    let appNum = batchNumber * batchSize + i + 1;
-    console.log(`Creating SpinApp ${testName}-${appNum}`);
-      let image = `${imagePrefix}${appNum}:${tag}`;
+  for (let i = numDeployed + 1; i < numDeployed + batchSize + 1; i++) {
+    console.log(`Creating SpinApp ${testName}-${i}`);
+      let image = `${imagePrefix}${i}:${tag}`;
       let app = new deploy.SpinApp(
-        `${testName}-${appNum}`,
+        `${testName}-${i}`,
         {
           "image": image,
           "replicas": replicas,
@@ -161,9 +73,6 @@ function applySpinApps(kubernetes, spinApps) {
     exec.test.abort(`SpinApps not ready after ${timeout} seconds after deploying ${i - 1} apps`);
   }
   timeToDeployTenApps.add(timeToReady, true);
-  let totalAppsDeployed = deploy.getSpinApps(kubernetes, namespace).length;
-  deployedApps.add(totalAppsDeployed);
-  console.log(`Deployed ${totalAppsDeployed} apps`);
 }
 
 /**
@@ -172,45 +81,41 @@ function applySpinApps(kubernetes, spinApps) {
  * @returns {string} The URL to be used for the test.
  */
 export function setup() {
-  let endpoints = [];
-  // TODO: get the number of batches from the Options
-  for (let i = 1; i <= totalApps; i++) {
-    let appName = `${testName}-${i}`;
-    let svc = deploy.serviceEndpointForApp(appName, namespace, route);
-    endpoints.push(new TestEndpoint(appName, svc));
-  }
-  return endpoints;
-}
-
-export function deployApps() {
   const kubernetes = new Kubernetes();
-  let batchSize = `${__ENV.BATCH_SIZE}` != "undefined" ? `${__ENV.BATCH_SIZE}` : 10;
-  let batchNumber = `${__ENV.BATCH_NUMBER}` != "undefined" ? `${__ENV.BATCH_NUMBER}` : 0;
-  console.log("Deploying apps for batch " + batchNumber);
+  let allApps = deploy.getSpinApps(kubernetes, namespace).length;
+  let startQuantity = allApps == 0 ? 0 : allApps;
+  console.log(`Deploying ${batchSize} apps to cluster with ${startQuantity} already deployed`);
+  let apps = createSpinApps(repo, startQuantity, batchSize);
+  applySpinApps(kubernetes, apps);
   let totalAppsDeployed = deploy.getSpinApps(kubernetes, namespace).length;
   deployedApps.add(totalAppsDeployed);
-  let apps = createSpinApps(repo, batchNumber, batchSize);
-  console.log(`Density test configured for batch ${batchNumber} of ${batchSize} apps`);
-  applySpinApps(kubernetes, apps);
-  sleep(10);
+  console.log(`Deployed ${totalAppsDeployed} apps`);
+  let endpoints = [];
+  // TODO: get the number of batches from the Options
+  for (let i = 0; i < apps.length; i++) {
+    let svc = deploy.serviceEndpointForApp(apps[i].metadata.name, namespace, route);
+    endpoints.push(new TestEndpoint(apps[i].metadata.name, svc));
+  }
+  sleep(restIntervalSecs);
+  return {
+    totalAppsDeployed : totalAppsDeployed,
+    endpoints: endpoints
+  };
 }
 
 /**
- * Function to test the deployed apps.
+ * Main function that is executed during the test.
  * It sends an HTTP GET request to the specified URL and performs a check on the response status.
  * @param {string} data - The URL to send the request to.
  */
-export function test(endpoints) {
-  let batchSize = `${__ENV.BATCH_SIZE}` != "undefined" ? `${__ENV.BATCH_SIZE}` : 10;
-  let batchNumber = `${__ENV.BATCH_NUMBER}` != "undefined" ? `${__ENV.BATCH_NUMBER}` : 0;
-  let totalAppsDeployed = batchNumber * batchSize + batchSize; 
-  for(let i = 0; i < totalAppsDeployed; i++) {
-    const res = http.get(endpoints[i].endpoint);
+export default function(data) {
+  for(let i = 0; i < data.endpoints.length; i++) {
+    const res = http.get(data.endpoints[i].endpoint);
     check(res, {
       "response code was 200": (res) => res.status == 200,
       "body message started with 'Hello'": (res) => typeof res.body === 'string' && (res.body.trim().includes("Hello"))
     },
-    { apps: totalAppsDeployed });
+    { apps: data.totalAppsDeployed });
     sleep(0.1);
   }
 }
@@ -219,10 +124,10 @@ export function test(endpoints) {
  * Teardown function that is executed after the test ends.
  * It deletes the SpinApp custom resource from the Kubernetes cluster.
  */
-export function teardown(endpoints) {
-  console.log("Tearing down density test");
-  const kubernetes = new Kubernetes();
-  for (let i = 0; i < endpoints.length; i++) {
-    kubernetes.delete("SpinApp.core.spinoperator.dev", endpoints[i].name, namespace);
-  }
+export function teardown() {
+  console.log("Skipping teardown for density test");
+  // const kubernetes = new Kubernetes();
+  // for (let i = 0; i < endpoints.length; i++) {
+  //   kubernetes.delete("SpinApp.core.spinoperator.dev", endpoints[i].name, namespace);
+  // }
 }

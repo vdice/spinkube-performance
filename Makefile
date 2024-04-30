@@ -16,9 +16,20 @@ push-k6-image:
 build-and-push-apps:
 	./apps/build-and-push.sh $(REGISTRY_URL)
 
-run-tests:
+run-density-test-%:
+	SPIN_APP_REGISTRY_URL="rg.fr-par.scw.cloud/dlancshire-public/template-app-" TEST=density NAME=density-$* ./tests/run.sh $(REGISTRY_URL)
+	echo "Logs from Density Test $*"
+	kubectl logs job/density-$*-1
+
+run-density-tests: run-density-test-1 run-density-test-2 run-density-test-3
+	kubectl delete spinapp --all
+
+run-hello-world-test:
 	TEST=hello-world ./tests/run.sh $(REGISTRY_URL)
-	SPIN_APP_REGISTRY_URL="rg.fr-par.scw.cloud/dlancshire-public/template-app-" TEST=density ./tests/run.sh $(REGISTRY_URL)
+	echo "Logs from Hello World Test"
+	kubectl logs job/hello-world-1
+
+run-tests: run-hello-world-test run-density-tests
 
 cleanup: cleanup-apps cleanup-tests
 
