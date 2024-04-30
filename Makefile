@@ -8,7 +8,7 @@ k6-build:
 
 build-k6-image:
 	cd image/k6 && \
-	docker build --platform linux/arm64 -t $(REGISTRY_URL)/k6:latest .
+	docker build --platform linux/amd64,linux/arm64 -t $(REGISTRY_URL)/k6:latest .
 
 push-k6-image:
 	docker push $(REGISTRY_URL)/k6:latest

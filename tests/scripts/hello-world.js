@@ -19,8 +19,11 @@ export let options = {
   tags: {
     test: testName,
   },
+  thresholds: {
+    // the rate of successful checks should be higher than 90%
+    checks: ['rate>0.90'],
+  },
   noConnectionReuse: true,
-  discardResponseBodies: true,
   scenarios: {
     rust: {
       executor: 'constant-vus',

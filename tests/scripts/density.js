@@ -27,8 +27,11 @@ export let options = {
   tags: {
     test: testName,
   },
+  thresholds: {
+    // the rate of successful checks should be higher than 90%
+    checks: ['rate>0.90'],
+  },
   noConnectionReuse: true,
-  discardResponseBodies: true,
   setupTimeout: '120s',
   scenarios: {
     deploy1: {
@@ -131,7 +134,7 @@ function createSpinApps(imagePrefix, batchNumber, batchSize) {
   for (let i = 0; i < batchSize; i++) {
     let appNum = batchNumber * batchSize + i + 1;
     console.log(`Creating SpinApp ${testName}-${appNum}`);
-      let image = `${imagePrefix}${appNum}:latest`;
+      let image = `${imagePrefix}${appNum}:${tag}`;
       let app = new deploy.SpinApp(
         `${testName}-${appNum}`,
         {
@@ -199,12 +202,14 @@ export function deployApps() {
 export function test(endpoints) {
   let batchSize = `${__ENV.BATCH_SIZE}` != "undefined" ? `${__ENV.BATCH_SIZE}` : 10;
   let batchNumber = `${__ENV.BATCH_NUMBER}` != "undefined" ? `${__ENV.BATCH_NUMBER}` : 0;
-  for(let i = 0; i < batchNumber * batchSize + batchSize; i++) {
+  let totalAppsDeployed = batchNumber * batchSize + batchSize; 
+  for(let i = 0; i < totalAppsDeployed; i++) {
     const res = http.get(endpoints[i].endpoint);
     check(res, {
       "response code was 200": (res) => res.status == 200,
       "body message started with 'Hello'": (res) => typeof res.body === 'string' && (res.body.trim().includes("Hello"))
-    });
+    },
+    { apps: totalAppsDeployed });
     sleep(0.1);
   }
 }
@@ -214,7 +219,8 @@ export function test(endpoints) {
  * It deletes the SpinApp custom resource from the Kubernetes cluster.
  */
 export function teardown(endpoints) {
-  console.log("Skipping teardown for density test")
+  console.log("Tearing down density test");
+  const kubernetes = new Kubernetes();
   for (let i = 0; i < endpoints.length; i++) {
     kubernetes.delete("SpinApp.core.spinoperator.dev", endpoints[i].name, namespace);
   }

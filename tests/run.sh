@@ -33,7 +33,7 @@ wait_for_testrun() {
 
 # TODO: change default to repo name
 REGISTRY_URL=${1:-"ghcr.io/kate-goldenring/performance"}
-SPIN_APP_REGISTRY_URL=${SPIN_APP_REGISTRY_URL:-"ghcr.io/kate-goldenring/performance"}
+SPIN_APP_REGISTRY_URL=${SPIN_APP_REGISTRY_URL:-"${REGISTRY_URL}"}
 TEST=${TEST:-"hello-world"}
 OUTPUT=${OUTPUT:-"datadog"}
 SPIN_V_VERSION=${SPIN_V_VERSION:-"2.4.2"}
