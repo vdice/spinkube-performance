@@ -81,8 +81,13 @@ yq -i '(.spec.runner.image = env(runner_image)) |
     (.spec.arguments += env(test_id)) |
     (.spec.runner.env += {"name": "REPO","value": env(repo)}) |
     (.spec.runner.env += {"name": "EXECUTOR","value": env(executor)}) |
-    (.spec.runner.env += {"name": "TAG","value": env(tag)}) |
     (.spec.script.configMap.name = env(name))' $tempfile
+
+if [[ "$TEST" == "density" ]]; then
+    export tag="latest"
+fi
+
+yq -i '(.spec.runner.env += {"name": "TAG","value": env(tag)})' $tempfile
 
 # Run command with the appropriate output
 if [ "$OUTPUT" == "prometheus" ];

@@ -73,14 +73,14 @@ export let options = {
       iterations: 1,
       vus: 1,
       maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 1 + restIntervalSecs * 2}s`,
+      startTime: `${maxScenarioDurationSecs * 2 + restIntervalSecs * 3}s`,
       env: { BATCH_NUMBER: '2', BATCH_SIZE: '10' },
     },
     test3: {
       executor: 'constant-vus',
       vus: 20,
       exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 2 + restIntervalSecs * 2}s`,
+      startTime: `${maxScenarioDurationSecs * 3 + restIntervalSecs * 3}s`,
       env: { BATCH_NUMBER: '2', BATCH_SIZE: '10' },
       duration: '10s',
     },
@@ -90,14 +90,14 @@ export let options = {
       iterations: 1,
       vus: 1,
       maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 1 + restIntervalSecs * 2}s`,
+      startTime: `${maxScenarioDurationSecs * 3 + restIntervalSecs * 4}s`,
       env: { BATCH_NUMBER: '3', BATCH_SIZE: '10' },
     },
     test4: {
       executor: 'constant-vus',
       vus: 20,
       exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 2 + restIntervalSecs * 2}s`,
+      startTime: `${maxScenarioDurationSecs * 4 + restIntervalSecs * 4}s`,
       env: { BATCH_NUMBER: '3', BATCH_SIZE: '10' },
       duration: '10s',
     },
@@ -107,14 +107,14 @@ export let options = {
       iterations: 1,
       vus: 1,
       maxDuration: `${maxScenarioDurationSecs}s`,
-      startTime: `${maxScenarioDurationSecs * 1 + restIntervalSecs * 2}s`,
+      startTime: `${maxScenarioDurationSecs * 4 + restIntervalSecs * 5}s`,
       env: { BATCH_NUMBER: '4', BATCH_SIZE: '10' },
     },
     test5: {
       executor: 'constant-vus',
       vus: 20,
       exec: 'test',
-      startTime: `${maxScenarioDurationSecs * 2 + restIntervalSecs * 2}s`,
+      startTime: `${maxScenarioDurationSecs * 5 + restIntervalSecs * 5}s`,
       env: { BATCH_NUMBER: '4', BATCH_SIZE: '10' },
       duration: '10s',
     },
@@ -163,6 +163,7 @@ function applySpinApps(kubernetes, spinApps) {
   timeToDeployTenApps.add(timeToReady, true);
   let totalAppsDeployed = deploy.getSpinApps(kubernetes, namespace).length;
   deployedApps.add(totalAppsDeployed);
+  console.log(`Deployed ${totalAppsDeployed} apps`);
 }
 
 /**
