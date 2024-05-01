@@ -110,12 +110,11 @@ export function setup() {
  */
 export default function(data) {
   for(let i = 0; i < data.endpoints.length; i++) {
-    const res = http.get(data.endpoints[i].endpoint);
+    const res = http.get(data.endpoints[i].endpoint, { tags: {number_of_apps: data.totalAppsDeployed} });
     check(res, {
       "response code was 200": (res) => res.status == 200,
       "body message started with 'Hello'": (res) => typeof res.body === 'string' && (res.body.trim().includes("Hello"))
-    },
-    { apps: data.totalAppsDeployed });
+    });
     sleep(0.1);
   }
 }

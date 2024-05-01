@@ -79,6 +79,8 @@ yq -i '(.spec.runner.image = env(runner_image)) |
     (.metadata.name = env(name)) |
     (.spec.arguments += "--tag testid=") |
     (.spec.arguments += env(test_id)) |
+    (.spec.arguments += " --tag testname=") |
+    (.spec.arguments += env(name)) |
     (.spec.runner.env += {"name": "REPO","value": env(repo)}) |
     (.spec.runner.env += {"name": "EXECUTOR","value": env(executor)}) |
     (.spec.script.configMap.name = env(name))' $tempfile
