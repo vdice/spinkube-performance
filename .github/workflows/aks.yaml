@@ -50,6 +50,8 @@ jobs:
         run: ./environment/spin-kube-k8s.sh
     
       - name: Run tests
+        env:
+          TEST_ID: ${{ github.run_id }}
         run: make run-tests
 
       - name: Deprovision K8s cluster (AKS)
