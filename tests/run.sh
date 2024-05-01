@@ -66,6 +66,12 @@ docker run --rm \
     -v "$(pwd):/workdir" \
     -w /workdir "${runner_image}" archive "${path}/scripts/${TEST}.js"
 
+# Get architecture and OS of node provisioned by runtime installer (and labeled with 'runtime=containerd-shim-spin')
+node_info=$(kubectl get nodes -l runtime=$executor -o json|jq -Cjr '.items[] | .metadata.name," ",.metadata.labels."beta.kubernetes.io/os"," ",.metadata.labels."beta.kubernetes.io/arch"," ",.metadata.labels."beta.kubernetes.io/instance-type", "\n"'| head)
+export node_os=$(echo $node_info | cut -d' ' -f2)
+export node_arch=$(echo $node_info | cut -d' ' -f3)
+export node_instance_type=$(echo $node_info | cut -d' ' -f4)
+
 # Create the script ConfigMap
 kubectl get configmap $name >/dev/null 2>&1 || \
     (kubectl create configmap $name --from-file=archive.tar && kubectl label configmap $name k6-test=true)
@@ -81,6 +87,12 @@ yq -i '(.spec.runner.image = env(runner_image)) |
     (.spec.arguments += env(test_id)) |
     (.spec.arguments += " --tag testname=") |
     (.spec.arguments += env(name)) |
+    (.spec.arguments += " --tag node_os=") |
+    (.spec.arguments += env(node_os)) |
+    (.spec.arguments += " --tag node_arch=") |
+    (.spec.arguments += env(node_arch)) |
+    (.spec.arguments += " --tag node_instance_type=") |
+    (.spec.arguments += env(node_instance_type)) |
     (.spec.runner.env += {"name": "REPO","value": env(repo)}) |
     (.spec.runner.env += {"name": "EXECUTOR","value": env(executor)}) |
     (.spec.script.configMap.name = env(name))' $tempfile
