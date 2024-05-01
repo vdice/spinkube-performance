@@ -26,6 +26,26 @@ export function getSpinApps(kubernetes, namespace) {
   return kubernetes.list("SpinApp.core.spinoperator.dev", namespace);
 }
 
+export function applySpinApp(kubernetes, name, image, replicas, executor, namespace) {
+  let spinApp = new SpinApp(
+    name,
+    {
+      "image": image,
+      "replicas": replicas,
+      "executor": executor
+    }
+  );
+  console.log("Creating SpinApp: " + JSON.stringify(spinApp));
+  try {
+    kubernetes.create(spinApp);
+  } catch (e) {
+    let exists = kubernetes.list("SpinApp.core.spinoperator.dev", namespace).filter((app) => app.metadata.name == spinApp.metadata.name);
+    if (exists.length == 0) {
+      throw e;
+    }
+  }
+}
+
 export function waitAllAppsReady(kubernetes, duration_sec, namespace, replicas) {
   let now = new Date().getTime();
   let end = now + (duration_sec * 1000);
@@ -42,6 +62,7 @@ export function waitAllAppsReady(kubernetes, duration_sec, namespace, replicas) 
         ready = ready + 1;
       }
       if (ready == spinApps.length) {
+        console.log(`All apps are ready`);
         return end - now;
       }
     }

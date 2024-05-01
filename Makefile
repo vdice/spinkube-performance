@@ -29,7 +29,12 @@ run-hello-world-test:
 	echo "Logs from Hello World Test"
 	kubectl logs job/hello-world-1
 
-run-tests: run-hello-world-test run-density-tests
+run-ramping-vus-test:
+	TEST=ramping-vus ./tests/run.sh $(REGISTRY_URL)
+	echo "Logs from Ramp Test"
+	kubectl logs job/ramping-vus-1
+
+run-tests: run-hello-world-test run-ramping-vus-test run-density-tests
 
 cleanup: cleanup-apps cleanup-tests cleanup-configmaps
 

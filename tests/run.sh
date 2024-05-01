@@ -5,7 +5,7 @@ source $(dirname $(realpath "$0"))/../utils.sh
 
 wait_for_testrun() {
     local name=$1
-    local max_duration=${2:-300}
+    local max_duration=$2
     local status
     local timeout=$((SECONDS+max_duration))
 
@@ -38,6 +38,8 @@ TEST=${TEST:-"hello-world"}
 OUTPUT=${OUTPUT:-"datadog"}
 SPIN_V_VERSION=${SPIN_V_VERSION:-"2.4.2"}
 TEST_ID=${TEST_ID:-$(date "+%Y-%m-%d-%H:%M:%S")}
+REPLICAS=${REPLICAS:-"1"}
+MAX_DURATION=${MAX_DURATION:-"600"}
 # Navigate to the directory containing the script
 path="$(dirname "$0")"
 echo "path is $path"
@@ -58,6 +60,7 @@ export executor=${EXECUTOR:-"containerd-shim-spin"}
 export runner_image=$REGISTRY_URL/k6:latest
 export test_id=$TEST_ID
 export name=${NAME:-$TEST}
+export replicas=$REPLICAS
 echo "Running test $name"
 
 # Create a tar archive of the test script and helper functions via the k6 runner image
@@ -94,6 +97,7 @@ yq -i '(.spec.runner.image = env(runner_image)) |
     (.spec.arguments += " --tag node_instance_type=") |
     (.spec.arguments += env(node_instance_type)) |
     (.spec.runner.env += {"name": "REPO","value": env(repo)}) |
+    (.spec.runner.env += {"name": "REPLICAS","value": strenv(replicas)}) |
     (.spec.runner.env += {"name": "EXECUTOR","value": env(executor)}) |
     (.spec.script.configMap.name = env(name))' $tempfile
 
@@ -128,4 +132,4 @@ fi
 cat $tempfile
 kubectl apply -f $tempfile
 
-wait_for_testrun $name
+wait_for_testrun $name $MAX_DURATION
