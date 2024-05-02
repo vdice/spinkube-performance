@@ -69,11 +69,10 @@ docker run --rm \
     -v "$(pwd):/workdir" \
     -w /workdir "${runner_image}" archive "${path}/scripts/${TEST}.js"
 
-# Get architecture and OS of node provisioned by runtime installer (and labeled with 'runtime=containerd-shim-spin')
-node_info=$(kubectl get nodes -l runtime=$executor -o json|jq -Cjr '.items[] | .metadata.name," ",.metadata.labels."beta.kubernetes.io/os"," ",.metadata.labels."beta.kubernetes.io/arch"," ",.metadata.labels."beta.kubernetes.io/instance-type", "\n"'| head)
-export node_os=$(echo $node_info | cut -d' ' -f2)
-export node_arch=$(echo $node_info | cut -d' ' -f3)
-export node_instance_type=$(echo $node_info | cut -d' ' -f4)
+export_node_info
+export node_os=$NODE_OS
+export node_arch=$NODE_ARCH
+export node_instance_type=$NODE_INSTANCE_TYPE
 
 # Create the script ConfigMap
 kubectl get configmap $name >/dev/null 2>&1 || \

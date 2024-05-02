@@ -3,6 +3,11 @@
 name: SpinKube Performance Tests
 on:
   workflow_dispatch:
+    inputs:
+      datadog_dashboard_id:
+        type: string
+        description: 'ID of datadog dashboard'
+        default: 'x5w-93r-msb'
 
 env:
   REGISTRY_URL: ghcr.io/${{github.repository}}
@@ -48,11 +53,24 @@ jobs:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
           READINESS_TIMEOUT: "120s"
         run: ./environment/spin-kube-k8s.sh
-    
       - name: Run tests
         env:
           TEST_ID: ${{ github.run_id }}
-        run: make run-tests
+        run: |
+          echo "TEST_START_UTC=$(date '+%s')"  >> "$GITHUB_ENV"
+          make run-tests
+
+      - name: Get DataDog dashboard URL
+        if: ${{ always() }}
+        env:
+          TEST_ID: ${{ github.run_id }}
+          DASHBOARD_ID: ${{ github.event.inputs.datadog_dashboard_id }}
+        run:  |
+          source utils.sh && export_node_info
+          export TEST_END_UTC=$(date '+%s')
+          export VARIABLE_KEYS=node_instance_type,node_os,node_arch,host,testid
+          export VARIABLE_VALS=$NODE_INSTANCE_TYPE,$NODE_OS,$NODE_ARCH,$NODE_NAME,$TEST_ID
+          ./dashboard/datadog-dashboard-url.sh
 
       - name: Deprovision K8s cluster (AKS)
         if: ${{ always() }}
