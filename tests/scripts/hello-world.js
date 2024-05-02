@@ -29,25 +29,25 @@ export let options = {
     rust: {
       executor: 'constant-vus',
       vus: 20,
-      duration: '10s',
+      duration: '30s',
     },
     py: {
       executor: 'constant-vus',
       vus: 20,
-      startTime: '20s',
-      duration: '10s',
+      startTime: '40s',
+      duration: '30s',
     },
     js: {
       executor: 'constant-vus',
       vus: 20,
-      startTime: '40s',
-      duration: '10s',
+      startTime: '80s',
+      duration: '30s',
     },
     go: {
       executor: 'constant-vus',
       vus: 20,
-      startTime: '60s',
-      duration: '10s',
+      startTime: '130s',
+      duration: '30s',
     },
   },
 };
