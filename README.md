@@ -94,3 +94,10 @@ sed -i '' 's/0\.0\.0\.0/<NODE_IP>/g' $HOME/.kube/config
      vus............................: 19      min=0        max=200
      vus_max........................: 200     min=200      max=200
      ```
+
+## Guidelines for K6 Scripts
+
+Some pointers to keep in mind:
+
+- Test options should should contain at least one [`scenario`](https://k6.io/docs/using-k6/scenarios/) for ease of filtering data.
+- Tests that are not evaluating RPS load should use a baseline of 20 VUs and 0.01s sleep between requests.

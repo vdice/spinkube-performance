@@ -28,8 +28,13 @@ export let options = {
     // the rate of successful checks should be higher than 90%
     checks: ['rate>0.90'],
   },
-  vus: 50,
-  duration: '30s',
+  scenarios: {
+    density: {
+      executor: 'constant-vus',
+      vus: 20,
+      duration: '60s',
+    }
+  },
   setupTimeout: '300s',
   noConnectionReuse: true
 };
@@ -72,7 +77,7 @@ function applySpinApps(kubernetes, spinApps) {
   if (timeToReady === -1) {
     exec.test.abort(`SpinApps not ready after ${timeout} seconds after deploying ${i - 1} apps`);
   }
-  timeToDeployTenApps.add(timeToReady, true);
+  timeToDeployTenApps.add(timeToReady);
 }
 
 /**
