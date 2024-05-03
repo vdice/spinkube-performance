@@ -31,14 +31,44 @@ wait_for_testrun() {
     echo "TestRun $name succeeded"
 }
 
+inject_envs_with_prefix() {
+    local prefix=$1
+    local file=$2
+    env | grep $prefix | while IFS= read -r line; do
+        IFS="=" read -r name value <<< "$line"
+        export name
+        export value
+        yq -i '(.spec.runner.env += {"name": env(name),"value": strenv(value)}) ' $file
+    done
+}
+
+inject_tags() {
+    local file=$1
+    i=0
+    eval 'vars=(${!'"$PREFIX_TEST_TAGS"'@})'
+    for var in "${vars[@]}"; do
+        tag_name=$(echo $var | sed "s/$PREFIX_TEST_TAGS//")
+        tag_name=$(echo $tag_name | tr '[:upper:]' '[:lower:]')
+        if [ $i == 0 ]; then
+            export tag="--tag $tag_name=${!var}"
+        else
+            export tag=" --tag $tag_name=${!var}"
+        fi
+        yq -i '(.spec.arguments += strenv(tag))' $file
+        i+=1
+    done
+}
+
+PREFIX_K6_ENVS="K6"
+PREFIX_TEST_ENVS="SK"
+PREFIX_TEST_TAGS="TAG_"
 # TODO: change default to repo name
 REGISTRY_URL=${1:-"ghcr.io/kate-goldenring/performance"}
-SPIN_APP_REGISTRY_URL=${SPIN_APP_REGISTRY_URL:-"${REGISTRY_URL}"}
 TEST=${TEST:-"hello-world"}
+export TAG_TEST_NAME=$TEST
 OUTPUT=${OUTPUT:-"datadog"}
-SPIN_V_VERSION=${SPIN_V_VERSION:-"2.4.2"}
-TEST_ID=${TEST_ID:-$(date "+%Y-%m-%d-%H:%M:%S")}
-REPLICAS=${REPLICAS:-"1"}
+export TAG_TEST_ID=${TEST_ID:-$(date "+%Y-%m-%d-%H:%M:%S")}
+export SK_EXECUTOR=${EXECUTOR:-"containerd-shim-spin"}
 MAX_DURATION=${MAX_DURATION:-"600"}
 # Navigate to the directory containing the script
 path="$(dirname "$0")"
@@ -54,14 +84,9 @@ kubectl apply -f $path/rbac.yaml
 
 # Extract values
 # NOTE: export is needed for any value used by yq's 'env()' function
-export repo=$SPIN_APP_REGISTRY_URL
-export tag=$SPIN_V_VERSION
-export executor=${EXECUTOR:-"containerd-shim-spin"}
 export runner_image=$REGISTRY_URL/k6:latest
-export test_id=$TEST_ID
-export name=${NAME:-$TEST}
-export replicas=$REPLICAS
-echo "Running test $name"
+export test_run_name=${SK_TEST_RUN_NAME:-$TEST}
+echo "Running test $TEST"
 
 # Create a tar archive of the test script and helper functions via the k6 runner image
 docker run --rm \
@@ -70,65 +95,48 @@ docker run --rm \
     -w /workdir "${runner_image}" archive "${path}/scripts/${TEST}.js"
 
 export_node_info
-export node_os=$NODE_OS
-export node_arch=$NODE_ARCH
-export node_instance_type=$NODE_INSTANCE_TYPE
+export TAG_NODE_OS=$NODE_OS
+export TAG_NODE_ARCH=$NODE_ARCH
+export TAG_NODE_INSTANCE_TYPE=$NODE_INSTANCE_TYPE
 
 # Create the script ConfigMap
-kubectl get configmap $name >/dev/null 2>&1 || \
-    (kubectl create configmap $name --from-file=archive.tar && kubectl label configmap $name k6-test=true)
+kubectl get configmap $test_run_name >/dev/null 2>&1 || \
+    (kubectl create configmap $test_run_name --from-file=archive.tar && kubectl label configmap $test_run_name k6-test=true)
 
 # Create temporary test run resource to customize per test app
-tempfile="$(mktemp -d)/test-run-$name.yaml"
+tempfile="$(mktemp -d)/test-run-$test_run_name.yaml"
 cp $path/test-run.yaml $tempfile
 
 # Update with common values regardless of output method
 yq -i '(.spec.runner.image = env(runner_image)) |
-    (.metadata.name = env(name)) |
-    (.spec.arguments += "--tag testid=") |
-    (.spec.arguments += env(test_id)) |
-    (.spec.arguments += " --tag testname=") |
-    (.spec.arguments += env(name)) |
-    (.spec.arguments += " --tag node_os=") |
-    (.spec.arguments += env(node_os)) |
-    (.spec.arguments += " --tag node_arch=") |
-    (.spec.arguments += env(node_arch)) |
-    (.spec.arguments += " --tag node_instance_type=") |
-    (.spec.arguments += env(node_instance_type)) |
-    (.spec.runner.env += {"name": "REPO","value": env(repo)}) |
-    (.spec.runner.env += {"name": "REPLICAS","value": strenv(replicas)}) |
-    (.spec.runner.env += {"name": "EXECUTOR","value": env(executor)}) |
-    (.spec.script.configMap.name = env(name))' $tempfile
-
-if [[ "$TEST" == "density" ]]; then
-    export tag="latest"
-fi
-
-yq -i '(.spec.runner.env += {"name": "TAG","value": env(tag)})' $tempfile
+    (.spec.script.configMap.name = env(test_run_name)) |
+    (.metadata.name = env(test_run_name))' $tempfile
 
 # Run command with the appropriate output
 if [ "$OUTPUT" == "prometheus" ];
 then
     echo "Running with Prometheus output"
-
-    # TODO: update K6_PROMETHEUS_RW_SERVER_URL with correct url (k8s svc?)
-    yq -i '(.spec.runner.env += {"name": "K6_PROMETHEUS_RW_SERVER_URL","value": "http://localhost:9090/api/v1/write"}) |
-        (.spec.runner.env += {"name": "K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM","value": "true"}) |
-        (.spec.runner.env += {"name": "K6_PROMETHEUS_RW_TREND_STATS","value": "p(99),p(50),min,max,avg"})' $tempfile
+    export K6_PROMETHEUS_RW_SERVER_URL="http://localhost:9090/api/v1/write"
+    export K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM="true"
+    export K6_PROMETHEUS_RW_TREND_STATS="p(99),p(50),min,max,avg"
 elif [ "$OUTPUT" == "datadog" ];
 then
     echo "Running with Datadog output"
-    export statsd_addr=datadog.datadog.svc.cluster.local:8125
-
-    yq -i '(.spec.runner.env += {"name": "K6_OUT","value": "output-statsd"}) |
-        (.spec.runner.env += {"name": "K6_STATSD_ADDR","value": env(statsd_addr)}) |
-        (.spec.runner.env += {"name": "K6_STATSD_ENABLE_TAGS","value": "true"})' $tempfile
+    export K6_OUT="output-statsd"
+    export K6_STATSD_ADDR=datadog.datadog.svc.cluster.local:8125
+    export K6_STATSD_ENABLE_TAGS=true
 else
     echo "Running with no output"
-    # TODO: write results summary to a file on the node?
 fi
+
+# Inject all K6 environment variable overrides
+inject_envs_with_prefix $PREFIX_K6_ENVS $tempfile
+# Inject all SpinKube test specific environment variable overrides
+inject_envs_with_prefix $PREFIX_TEST_ENVS $tempfile
+# Create K6 tags from environment variables
+inject_tags $tempfile
 
 cat $tempfile
 kubectl apply -f $tempfile
 
-wait_for_testrun $name $MAX_DURATION
+wait_for_testrun $test_run_name $MAX_DURATION

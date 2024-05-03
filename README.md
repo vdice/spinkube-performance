@@ -95,9 +95,27 @@ sed -i '' 's/0\.0\.0\.0/<NODE_IP>/g' $HOME/.kube/config
      vus_max........................: 200     min=200      max=200
      ```
 
+## Customizing Tests
+
+Tests can be customized to your use case using environment variables. All environment variables prefixed with `K6` and `SK` will be injected as environment variables in the K6 TestRun pod. All environment variables prefixed with `TAG_` will be injected into a TestRun as a `--tag <SOMETHING>=$TAG_<SOMETHING>`.
+
+The `SK` (for "SpinKube") prefixed environment variables are specific to this suite of scripts. Some are specific to certain scripts; however, the following can be used to configure any script:
+
+- `SK_REPLICAS`: `replicas` to set in the [`SpinApp` custom resources](https://www.spinkube.dev/docs/spin-operator/reference/spin-app/) created by the test
+- `SK_NAMESPACE`: `namespace` to set in the [`SpinApp` custom resources](https://www.spinkube.dev/docs/spin-operator/reference/spin-app/) created by the test
+- `SK_EXECUTOR`: executor to set in the [`SpinApp` custom resources](https://www.spinkube.dev/docs/spin-operator/reference/spin-app/) created by the test
+- `SK_OCI_REPO`: Base OCI repository for the Spin application artifacts
+- `SK_OCI_TAG`: OCI image tag for all the apps
+- `SK_ROUTE`: The HTTP route for the Spin app ([assumes HTTP trigger](https://developer.fermyon.com/spin/v2/manifest-reference#the-trigger-table))
+
+The `K6` prefixed environment variables are specific to k6, which supports overriding [options](https://k6.io/docs/using-k6/k6-options/reference/) that are configured in a test script with environment variables prefixed with `K6_`. For example, the [`constant-vus` test](tests/scripts/constant-vus.js) can be updated to use 40 VUs by running the following:
+
+    ```sh
+    K6_VUS=40 make run-constant-vus-test-1
+    ```
+
 ## Guidelines for K6 Scripts
 
 Some pointers to keep in mind:
 
-- Test options should should contain at least one [`scenario`](https://k6.io/docs/using-k6/scenarios/) for ease of filtering data.
 - Tests that are not evaluating RPS load should use a baseline of 20 VUs and 0.01s sleep between requests.

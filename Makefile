@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
 REGISTRY_URL ?= ghcr.io/kate-goldenring/performance
+SPIN_V_VERSION ?= 2.4.2
 
 k6-build:
 	go install go.k6.io/xk6/cmd/xk6@latest
@@ -17,7 +18,12 @@ build-and-push-apps:
 	./apps/build-and-push.sh $(REGISTRY_URL)
 
 run-density-test-%:
-	SPIN_APP_REGISTRY_URL="rg.fr-par.scw.cloud/dlancshire-public/template-app-" TEST=density NAME=density-$* ./tests/run.sh $(REGISTRY_URL)
+	TEST=density \
+	SK_TEST_RUN_NAME=density-$* \
+	SK_SPIN_APP_ROUTE="" \
+	SK_OCI_TAG="latest" \
+	SK_OCI_REPO="rg.fr-par.scw.cloud/dlancshire-public/template-app-" \
+	./tests/run.sh $(REGISTRY_URL)
 	echo "Logs from Density Test $*"
 	kubectl logs job/density-$*-1
 
@@ -25,16 +31,40 @@ run-density-tests: run-density-test-1 run-density-test-2 run-density-test-3 run-
 	kubectl delete spinapp --all
 
 run-hello-world-test:
-	TEST=hello-world ./tests/run.sh $(REGISTRY_URL)
+	TEST=hello-world \
+	SK_SPIN_APP_ROUTE="hello" \
+	SK_OCI_TAG=$(SPIN_V_VERSION) \
+	SK_OCI_REPO=$(REGISTRY_URL) \
+	SK_REPLICAS=1 \
+	./tests/run.sh $(REGISTRY_URL)
 	echo "Logs from Hello World Test"
 	kubectl logs job/hello-world-1
 
 run-ramping-vus-test-%:
-	REPLICAS=$* TEST=ramping-vus NAME=ramping-vus-$* ./tests/run.sh $(REGISTRY_URL)
+	TEST=ramping-vus \
+	SK_TEST_RUN_NAME=ramping-vus-$* \
+	SK_SPIN_APP_ROUTE="hello" \
+	SK_OCI_TAG=$(SPIN_V_VERSION) \
+	SK_OCI_REPO=$(REGISTRY_URL) \
+	SK_REPLICAS=$* \
+	./tests/run.sh $(REGISTRY_URL)
 	echo "Logs from Ramp Test"
 	kubectl logs job/ramping-vus-$*-1
 
-run-tests: run-hello-world-test run-ramping-vus-test-1 run-ramping-vus-test-10 run-density-tests
+run-constant-vus-test-%:
+	# SET `K6_VUS` ENV VAR TO OVERRIDE DEFAULT VUS
+	TEST=constant-vus \
+	SK_TEST_RUN_NAME=constant-vus-$* \
+	SK_SPIN_APP_ROUTE="hello" \
+	SK_SPIN_APP="hello-world-rust" \
+	SK_OCI_TAG=$(SPIN_V_VERSION) \
+	SK_OCI_REPO=$(REGISTRY_URL) \
+	SK_REPLICAS=$* \
+	./tests/run.sh $(REGISTRY_URL)
+	echo "Logs from Constant VUs Test"
+	kubectl logs job/constant-vus-$*-1
+
+run-tests: run-hello-world-test run-constant-vus-test-1 run-ramping-vus-test-1 run-ramping-vus-test-10 run-density-tests
 
 cleanup: cleanup-apps cleanup-tests cleanup-configmaps
 

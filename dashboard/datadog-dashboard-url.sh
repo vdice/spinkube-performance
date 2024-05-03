@@ -41,7 +41,9 @@ echo "   TEST_END_UTC=$TEST_END_UTC"
 url="https://app.datadoghq.com/dashboard/$DASHBOARD_ID?"
 for i in "${!var_keys_arr[@]}"
 do
-    url="${url}&tpl_var_${var_keys_arr[i]}=${var_vals_arr[i]}"
+    # K6 seems to convert all tags to lowercase
+    value_lowercased=$(echo ${var_vals_arr[i]} | tr '[:upper:]' '[:lower:]')
+    url="${url}&tpl_var_${var_keys_arr[i]}=$value_lowercased"
 done
 # Use exact time rather than relative time
 live="false"

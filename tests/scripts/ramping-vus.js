@@ -2,19 +2,21 @@ import http from 'k6/http';
 import { Kubernetes } from 'k6/x/kubernetes';
 import * as deploy from "./common/common.js";
 import { sleep } from 'k6';
-const testName = "ramping-vus";
-const route = "hello"
-const replicas = `${__ENV.REPLICAS}` != "undefined" ? parseInt(`${__ENV.REPLICAS}`) : 1;
-const namespace = `${__ENV.NAMESPACE}` != "undefined" ? `${__ENV.NAMESPACE}` : "default";
-let executor = `${__ENV.EXECUTOR}` != "undefined" ? `${__ENV.EXECUTOR}` : "containerd-shim-spin";
-let repo = `${__ENV.REPO}` != "undefined" ? `${__ENV.REPO}` : "ghcr.io/kate-goldenring/performance";
-let tag = `${__ENV.TAG}` != "undefined" ? `${__ENV.TAG}` : "latest";
-let name = `${__ENV.NAME}` != "undefined" ? `${__ENV.NAME}` : "ramping-vus";
-let appToTest = "hello-world-rust";
+
+const testScriptName = "ramping-vus";
+const replicas = `${__ENV.SK_REPLICAS}` != "undefined" ? parseInt(`${__ENV.SK_REPLICAS}`) : 1; 
+const namespace = `${__ENV.SK_NAMESPACE}` != "undefined" ? `${__ENV.SK_NAMESPACE}` : "default";
+const executor = `${__ENV.SK_EXECUTOR}` != "undefined" ? `${__ENV.SK_EXECUTOR}` : "containerd-shim-spin";
+const repo = `${__ENV.SK_OCI_REPO}` != "undefined" ? `${__ENV.SK_OCI_REPO}` : "ghcr.io/kate-goldenring/performance";
+const tag = `${__ENV.SK_OCI_TAG}` != "undefined" ? `${__ENV.SK_OCI_TAG}` : "latest";
+const route = `${__ENV.SK_SPIN_APP_ROUTE}` != "undefined" ? `${__ENV.SK_SPIN_APP_ROUTE}` : "";
+const appToTest = `${__ENV.SK_SPIN_APP}` != "undefined" ? `${__ENV.SK_SPIN_APP}` : "hello-world-rust";
+
+const name = `${__ENV.SK_TEST_RUN_NAME}` != "undefined" ? `${__ENV.SK_TEST_RUN_NAME}` : testScriptName;
 
 export let options = {
   tags: {
-    test: testName,
+    test: testScriptName
   },
   thresholds: {
     http_req_failed: ['rate<0.1'],

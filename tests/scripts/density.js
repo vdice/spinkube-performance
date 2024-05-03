@@ -6,23 +6,23 @@ import { Gauge } from 'k6/metrics';
 import exec from 'k6/execution';
 import { sleep } from 'k6';
 
-const testName = "density";
-const route = ""
-const replicas = 1;
-const namespace = `${__ENV.NAMESPACE}` != "undefined" ? `${__ENV.NAMESPACE}` : "default";
-const executor = `${__ENV.EXECUTOR}` != "undefined" ? `${__ENV.EXECUTOR}` : "containerd-shim-spin";
-const repo = `${__ENV.REPO}` != "undefined" ? `${__ENV.REPO}` : "rg.fr-par.scw.cloud/dlancshire-public/template-app-";
-const tag = `${__ENV.TAG}` != "undefined" ? `${__ENV.TAG}` : "latest";
-const maxScenarioDurationSecs = `${__ENV.MAX_SCENARIO_DURATION_SECS}` != "undefined" ? `${__ENV.MAX_SCENARIO_DURATION_SECS}` : 180;
-const restIntervalSecs = `${__ENV.REST_INTERVAL_SECONDS}` != "undefined" ? `${__ENV.REST_INTERVAL_SECONDS}` : 10;
-const batchSize = `${__ENV.BATCH_SIZE}` != "undefined" ? `${__ENV.BATCH_SIZE}` : 10;
+const testScriptName = "density";
+const replicas = `${__ENV.SK_REPLICAS}` != "undefined" ? parseInt(`${__ENV.SK_REPLICAS}`) : 1; 
+const namespace = `${__ENV.SK_NAMESPACE}` != "undefined" ? `${__ENV.SK_NAMESPACE}` : "default";
+const executor = `${__ENV.SK_EXECUTOR}` != "undefined" ? `${__ENV.SK_EXECUTOR}` : "containerd-shim-spin";
+const repo = `${__ENV.SK_OCI_REPO}` != "undefined" ? `${__ENV.SK_OCI_REPO}` : "ghcr.io/kate-goldenring/performance";
+const tag = `${__ENV.SK_OCI_TAG}` != "undefined" ? `${__ENV.SK_OCI_TAG}` : "latest";
+const route = `${__ENV.SK_SPIN_APP_ROUTE}` != "undefined" ? `${__ENV.SK_SPIN_APP_ROUTE}` : "";
+const maxScenarioDurationSecs = `${__ENV.SK_MAX_SCENARIO_DURATION_SECS}` != "undefined" ? `${__ENV.SK_MAX_SCENARIO_DURATION_SECS}` : 180;
+const restIntervalSecs = `${__ENV.SK_REST_INTERVAL_SECONDS}` != "undefined" ? `${__ENV.SK_REST_INTERVAL_SECONDS}` : 10;
+const batchSize = `${__ENV.SK_BATCH_SIZE}` != "undefined" ? `${__ENV.SK_BATCH_SIZE}` : 10;
 
 const timeToDeployTenApps = new Gauge(`time_to_deploy_${batchSize}_apps`);
 const deployedApps = new Gauge('number_of_apps');
 
 export let options = {
   tags: {
-    test: testName,
+    test: testScriptName
   },
   thresholds: {
     // the rate of successful checks should be higher than 90%
@@ -50,10 +50,10 @@ function createSpinApps(imagePrefix, numDeployed, batchSize) {
   console.log(`Creating ${batchSize} SpinApp custom resources also deployed ${numDeployed} apps`)
   let apps = [];
   for (let i = numDeployed + 1; i < numDeployed + batchSize + 1; i++) {
-    console.log(`Creating SpinApp ${testName}-${i}`);
+    console.log(`Creating SpinApp ${testScriptName}-${i}`);
       let image = `${imagePrefix}${i}:${tag}`;
       let app = new deploy.SpinApp(
-        `${testName}-${i}`,
+        `${testScriptName}-${i}`,
         {
           "image": image,
           "replicas": replicas,

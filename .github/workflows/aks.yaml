@@ -69,7 +69,7 @@ jobs:
         run:  |
           source utils.sh && export_node_info
           export TEST_END_UTC=$(date '+%s%3N')
-          export VARIABLE_KEYS=node_instance_type,node_os,node_arch,host,testid
+          export VARIABLE_KEYS=node_instance_type,node_os,node_arch,host,test_id
           export VARIABLE_VALS=$NODE_INSTANCE_TYPE,$NODE_OS,$NODE_ARCH,$NODE_HOST,$TEST_ID
           ./dashboard/datadog-dashboard-url.sh
 
