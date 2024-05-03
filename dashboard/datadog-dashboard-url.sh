@@ -25,8 +25,11 @@ IFS=', ' read -r -a var_keys_arr <<< "$VARIABLE_KEYS"
 IFS=', ' read -r -a var_vals_arr <<< "$VARIABLE_VALS"
 if [ ${#var_keys_arr[@]} -ne ${#var_vals_arr[@]} ]; then
     echo "Error: the number of keys and values do not match"
+    echo "Keys: ${var_keys_arr[@]}"
+    echo "Values: ${var_vals_arr[@]}"
     exit 1
 fi
+
 
 echo "Constructing Datadog dashboard URL with the following parameters:"
 echo "   DASHBOARD_ID=$DASHBOARD_ID"
@@ -40,7 +43,9 @@ for i in "${!var_keys_arr[@]}"
 do
     url="${url}&tpl_var_${var_keys_arr[i]}=${var_vals_arr[i]}"
 done
-url="${url}&view=spans&from_ts=$TEST_START_UTC&to_ts=$TEST_END_UTC&live=true"
+# Use exact time rather than relative time
+live="false"
+url="${url}&view=spans&from_ts=$TEST_START_UTC&to_ts=$TEST_END_UTC&live=$live"
 
 echo "URL is:"
 echo $url
