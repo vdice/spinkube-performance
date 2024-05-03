@@ -21,7 +21,7 @@ run-density-test-%:
 	echo "Logs from Density Test $*"
 	kubectl logs job/density-$*-1
 
-run-density-tests: run-density-test-1 run-density-test-2 run-density-test-3
+run-density-tests: run-density-test-1 run-density-test-2 run-density-test-3 run-density-test-4 run-density-test-5
 	kubectl delete spinapp --all
 
 run-hello-world-test:
@@ -29,12 +29,12 @@ run-hello-world-test:
 	echo "Logs from Hello World Test"
 	kubectl logs job/hello-world-1
 
-run-ramping-vus-test:
-	TEST=ramping-vus ./tests/run.sh $(REGISTRY_URL)
+run-ramping-vus-test-%:
+	REPLICAS=$* TEST=ramping-vus NAME=ramping-vus-$* ./tests/run.sh $(REGISTRY_URL)
 	echo "Logs from Ramp Test"
-	kubectl logs job/ramping-vus-1
+	kubectl logs job/ramping-vus-$*-1
 
-run-tests: run-hello-world-test run-ramping-vus-test run-density-tests
+run-tests: run-hello-world-test run-ramping-vus-test-1 run-ramping-vus-test-10 run-density-tests
 
 cleanup: cleanup-apps cleanup-tests cleanup-configmaps
 
