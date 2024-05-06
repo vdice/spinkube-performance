@@ -74,7 +74,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user_nodepools" {
 
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
   name                  = var.user_nodepools[count.index].name
-  vm_size               = var.user_nodepools[count.index].size
+  vm_size               = var.user_nodepools[count.index].name == "apps" && var.apps_nodepool_sku != "" ? var.apps_nodepool_sku : var.user_nodepools[count.index].size
 
   mode    = "User"
   os_type = "Linux"

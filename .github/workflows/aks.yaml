@@ -4,6 +4,10 @@ name: SpinKube Performance Tests
 on:
   workflow_dispatch:
     inputs:
+      apps_nodepool_sku:
+        type: string
+        description: "SKU for the node(s) running SpinApps"
+        default: 'Standard_A2_v2'
       datadog_dashboard_id:
         type: string
         description: 'ID of datadog dashboard'
@@ -14,6 +18,7 @@ env:
   SPIN_V_VERSION: "2.4.2"
   # Terraform env vars associated with configuration variables
   TF_VAR_prefix: ci-spinkube-perf
+  TF_VAR_apps_nodepool_sku: ${{ github.event.inputs.apps_nodepool_sku }}
 
 jobs:
   tests:

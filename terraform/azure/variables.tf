@@ -63,6 +63,12 @@ variable "user_nodepools" {
   }]
 }
 
+variable "apps_nodepool_sku" {
+  description = "SKU override for the node(s) hosting SpinApps. (Default: empty, inherit SKU used in var.user_nodepools)"
+  type        = string
+  default     = ""
+}
+
 variable "tags" {
   description = "Map of extra tags to attach to items which accept them"
   type        = map(string)
