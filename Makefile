@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-REGISTRY_URL ?= ghcr.io/kate-goldenring/performance
+REGISTRY_URL ?= spinkubeperf.azurecr.io
 SPIN_V_VERSION ?= 2.4.2
 
 k6-build:
@@ -22,7 +22,7 @@ run-density-test-%:
 	SK_TEST_RUN_NAME=density-$* \
 	SK_SPIN_APP_ROUTE="" \
 	SK_OCI_TAG="latest" \
-	SK_OCI_REPO="rg.fr-par.scw.cloud/dlancshire-public/template-app-" \
+	SK_OCI_REPO=$(REGISTRY_URL) \
 	./tests/run.sh $(REGISTRY_URL)
 	echo "Logs from Density Test $*"
 	kubectl logs job/density-$*-1
