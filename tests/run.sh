@@ -62,8 +62,7 @@ inject_tags() {
 PREFIX_K6_ENVS="K6"
 PREFIX_TEST_ENVS="SK"
 PREFIX_TEST_TAGS="TAG_"
-# TODO: change default to repo name
-REGISTRY_URL=${1:-"ghcr.io/kate-goldenring/performance"}
+REGISTRY_URL=${1:-"spinkubeperf.azurecr.io"}
 TEST=${TEST:-"hello-world"}
 export TAG_TEST_NAME=$TEST
 OUTPUT=${OUTPUT:-"datadog"}

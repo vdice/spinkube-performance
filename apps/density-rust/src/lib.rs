@@ -7,6 +7,6 @@ fn handle_all(_req: Request) -> anyhow::Result<impl IntoResponse> {
     Ok(Response::builder()
         .status(200)
         .header("content-type", "text/plain")
-        .body("Hello SENTINEL_VALUE")
+        .body("Hello <NUMBER>")
         .build())
 }
