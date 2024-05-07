@@ -4,7 +4,7 @@ set -eou pipefail
 source $(dirname $(realpath "$0"))/../utils.sh
 
 # TODO: change default to repo name
-REGISTRY_URL=${REGISTRY_URL:-"ghcr.io/kate-goldenring/performance"}
+REGISTRY_URL=${REGISTRY_URL:-"spinkubeperf.azurecr.io"}
 
 # Navigate to the directory containing the script
 cd "$(dirname "$0")" || exit

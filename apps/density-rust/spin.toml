@@ -1,0 +1,18 @@
+spin_manifest_version = 2
+
+[application]
+name = "density-rust"
+version = "0.1.0"
+authors = ["Vaughn Dice <vaughn.dice@fermyon.com>"]
+description = ""
+
+[[trigger.http]]
+route = "/..."
+component = "density-rust"
+
+[component.density-rust]
+source = "target/wasm32-wasi/release/density_rust.wasm"
+allowed_outbound_hosts = []
+[component.density-rust.build]
+command = "cargo build --target wasm32-wasi --release"
+watch = ["src/**/*.rs", "Cargo.toml"]
