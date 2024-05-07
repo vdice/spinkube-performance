@@ -35,19 +35,19 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform init
-        working-directory: terraform/azure
+        working-directory: terraform/azure/aks
         run: terraform init
 
       - name: Terraform plan
-        working-directory: terraform/azure
+        working-directory: terraform/azure/aks
         run: terraform plan -input=false -out=tf.plan
 
       - name: Terraform apply
-        working-directory: terraform/azure
+        working-directory: terraform/azure/aks
         run: terraform apply -input=false -auto-approve tf.plan
 
       - name: Export kubeconfig
-        working-directory: terraform/azure
+        working-directory: terraform/azure/aks
         run: |
           mkdir -p $HOME/.kube
           terraform output -raw kube_config > $HOME/.kube/config
@@ -80,5 +80,5 @@ jobs:
 
       - name: Deprovision K8s cluster (AKS)
         if: ${{ always() }}
-        working-directory: terraform/azure
+        working-directory: terraform/azure/aks
         run: terraform destroy -input=false -auto-approve

@@ -31,12 +31,12 @@ jobs:
       - name: Install Rust wasm target
         run: rustup target add wasm32-wasi
         
-      - name: Login to GitHub Container Registry
+      - name: Login to Azure Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ secrets.CR_USERNAME }}
-          password: ${{ secrets.CR_PASSWORD }}
+          registry: spinkubeperf.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push apps
         run: make build-and-push-apps
